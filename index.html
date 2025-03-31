@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Enhanced Lip Sync Demo with Speech</title>
+<style>
+  body {
+    font-family: sans-serif;
+    margin: 20px;
+  }
+  #controls {
+    margin-bottom: 15px;
+  }
+  #mouth-container img {
+    width: 200px;
+    height: auto;
+    border: 1px solid #ccc;
+  }
+</style>
+</head>
+<body>
+<h1>Enhanced Lip Sync Demo with Speech</h1>
+
+<div id="controls">
+  <textarea id="input-text" rows="4" cols="50" placeholder="Type your text here..."></textarea><br><br>
+  <button id="start-btn">Start Lip Sync and Speech</button>
+  <button id="stop-btn">Stop</button>
+</div>
+
+<div id="mouth-container">
+  <img src="img/rest.jpg" alt="Resting Face"> <!-- Initialize with a default image -->
+</div>
+
+<script>
+  const FRAMES_PER_SECOND = 20;
+  let frameDuration = 1000 / FRAMES_PER_SECOND;
+  const mouthContainer = document.querySelector('#mouth-container img');
+  const mouthShapes = {
+    'MBP': 'img/MBP.jpg',
+    'FV': 'img/FV.jpg',
+    'TH': 'img/TH.jpg',
+    'L': 'img/L.jpg',
+    'S': 'img/S.jpg',
+    'E': 'img/E.jpg',
+    'A': 'img/A.jpg',
+    'O': 'img/O.jpg',
+    'U': 'img/U.jpg',
+    'rest': 'img/rest.jpg'
+  };
+
+  let lastTime = 0;
+  let currentCharIndex = 0;
+  let textArray = [];
+
+  const synth = window.speechSynthesis; // Get the speech synthesis object
+  let utterance;
+
+  function getMouthShapeForCharacter(char) {
+    char = char.toLowerCase();
+    if ("mbp".includes(char)) return 'MBP';
+    if ("fv".includes(char)) return 'FV';
+    if ("tdnr".includes(char)) return 'TH';
+    if (char === 'l') return 'L';
+    if ("szchj".includes(char)) return 'S';
+    if ("eiy".includes(char)) return 'E';
+    if (char === 'a') return 'A';
+    if (char === 'o') return 'O';
+    if ("uwq".includes(char)) return 'U';
+    return 'rest';
+  }
+
+  function updateMouthImage(timestamp) {
+    if (timestamp - lastTime >= frameDuration) {
+      if (currentCharIndex >= textArray.length) {
+        mouthContainer.src = mouthShapes['rest'];
+        return; // Stop the animation once all characters are displayed
+      }
+      const char = textArray[currentCharIndex];
+      const shape = char === ' ' ? 'rest' : getMouthShapeForCharacter(char);
+      mouthContainer.src = mouthShapes[shape];
+      frameDuration = char === ' ' ? 250 : 1000 / FRAMES_PER_SECOND; // Shorter duration for spaces
+      lastTime = timestamp;
+      currentCharIndex++;
+    }
+    requestAnimationFrame(updateMouthImage);
+  }
+
+  document.getElementById('start-btn').addEventListener('click', () => {
+    const text = document.getElementById('input-text').value.trim();
+    if (!text) {
+      alert("Please enter some text first.");
+      return;
+    }
+    textArray = text.split('');
+    currentCharIndex = 0;
+    lastTime = performance.now();
+
+    if (synth.speaking) { // If already speaking, cancel before starting again
+        synth.cancel();
+    }
+    utterance = new SpeechSynthesisUtterance(text);
+    synth.speak(utterance);
+
+    requestAnimationFrame(updateMouthImage);
+  });
+
+  document.getElementById('stop-btn').addEventListener('click', () => {
+    synth.cancel(); // Stop speech synthesis
+    currentCharIndex = textArray.length; // This effectively stops the animation
+  });
+</script>
+</body>
+</html>
+
